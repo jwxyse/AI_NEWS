@@ -159,7 +159,7 @@
 | 테이블 | 주요 필드 |
 |---|---|
 | categories | id, userId, name, description, createdAt |
-| articles | id, userId, source, originalUrl, originalTitle, titleKo, summaryKo, categoryId, publishedAt, notionPageUrl, createdAt |
+| articles | id, userId, source, originalUrl, originalTitle, author, titleKo, summaryKo, categoryId, publishedAt, notionPageUrl, createdAt |
 | notion_connections | userId, 암호화된 토큰, 만료 시각, 대상 데이터베이스 ID, 워크스페이스 이름 |
 
 ---

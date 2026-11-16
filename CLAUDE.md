@@ -15,6 +15,9 @@ npm run dev      # 개발 서버 (http://localhost:3000)
 npm run build    # 프로덕션 빌드 (.next/types 의 LayoutProps/PageProps 등 라우트 타입도 생성)
 npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
 npx tsc --noEmit # 타입 검사 — .next/ 가 없으면 LayoutProps 미정의 오류가 나므로 먼저 build 또는 dev 실행
+npm run db:generate # src/db/schema.ts 변경 → drizzle/ 에 마이그레이션 SQL 생성 (DB 연결 불필요)
+npm run db:migrate  # 마이그레이션을 Neon DB에 적용 (.env.local 의 DATABASE_URL 사용)
+npm run db:studio   # Drizzle Studio로 DB 확인
 ```
 
 테스트 러너는 아직 설정되어 있지 않습니다.
@@ -24,7 +27,8 @@ npx tsc --noEmit # 타입 검사 — .next/ 가 없으면 LayoutProps 미정의 
 - **Next.js 16 (App Router, `src/app/`)**, React 19, TypeScript, 경로 별칭 `@/*` → `src/*`.
 - `next.config.ts`에서 `cacheComponents: true`, `partialPrefetching: true`가 켜져 있습니다. 데이터 페칭·캐싱·동적 렌더링 코드를 쓰기 전에 `node_modules/next/dist/docs/`의 해당 가이드를 확인하세요.
 - **Tailwind CSS v4** — `tailwind.config` 파일 없이 `src/app/globals.css`에서 설정하며, Turbopack 로더 `@tailwindcss/turbopack`으로 처리됩니다.
-- 설치된 PRD 스택 패키지: `@clerk/nextjs`(인증), `drizzle-orm` + `@neondatabase/serverless` + `drizzle-kit`(Neon Postgres), `rss-parser`, `@anthropic-ai/sdk`. Drizzle 설정·스키마와 `.env.local`은 아직 없습니다.
+- 설치된 PRD 스택 패키지: `@clerk/nextjs`(인증), `drizzle-orm` + `@neondatabase/serverless` + `drizzle-kit`(Neon Postgres), `rss-parser`, `@anthropic-ai/sdk`.
+- **DB (Drizzle + Neon)**: 설정 `drizzle.config.ts`(`@next/env`로 `.env.local` 로드), 클라이언트 `src/db/index.ts`(`drizzle-orm/neon-http`, `server-only` — 서버 코드에서만 `import { db } from "@/db"`), 스키마 `src/db/schema.ts`. 스키마를 바꾸면 `db:generate`로 마이그레이션을 만들어 `drizzle/`을 함께 커밋한다(`push` 대신 generate+migrate).
 
 ## 인증 (Clerk Core 3, `@clerk/nextjs` v7)
 
