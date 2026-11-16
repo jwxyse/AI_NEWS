@@ -12,6 +12,8 @@ const FEEDS: { source: ArticleSource; url: string }[] = [
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_SUMMARY_LENGTH = 500;
+// 원문 페이지를 못 받아올 때 Claude 요약 입력으로 쓰는 RSS 발췌 길이
+const MAX_EXCERPT_LENGTH = 3000;
 
 // The Verge(Atom)는 작성자를 item.author 로 준다. 기본 Item 타입에 없어서 추가한다.
 type FeedItem = { author?: string };
@@ -76,7 +78,7 @@ function toArticle(
     return null;
   }
 
-  const summary = truncate(cleanText(item.contentSnippet ?? item.summary ?? ""), MAX_SUMMARY_LENGTH);
+  const excerpt = cleanText(item.contentSnippet ?? item.summary ?? "");
   const author = cleanText(item.creator ?? item.author ?? "") || null;
 
   return {
@@ -84,10 +86,10 @@ function toArticle(
     originalUrl,
     originalTitle: title,
     author,
-    // TODO: Claude 번역·요약(FR-3) 전까지는 원문 제목·요약을 임시로 넣는다.
-    // titleKo === originalTitle 이면 아직 요약되지 않은 기사다.
+    originalExcerpt: truncate(excerpt, MAX_EXCERPT_LENGTH) || null,
+    // Claude 번역·요약(summarizedAt)이 끝나기 전까지는 원문 제목·발췌를 임시로 보여준다.
     titleKo: title,
-    summaryKo: summary,
+    summaryKo: truncate(excerpt, MAX_SUMMARY_LENGTH),
     publishedAt,
   };
 }

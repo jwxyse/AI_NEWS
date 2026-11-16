@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { articles, categories, userArticles, type NewArticle } from "@/db/schema";
@@ -71,6 +71,68 @@ export async function insertArticles(items: NewArticle[]) {
     .values(items)
     .onConflictDoNothing({ target: articles.originalUrl })
     .returning({ id: articles.id });
+}
+
+// 아직 Claude 번역·요약을 하지 않은 공통 기사 (최신순)
+export function getPendingSummaries(limit: number) {
+  return db
+    .select({
+      id: articles.id,
+      originalUrl: articles.originalUrl,
+      originalTitle: articles.originalTitle,
+      originalExcerpt: articles.originalExcerpt,
+    })
+    .from(articles)
+    .where(isNull(articles.summarizedAt))
+    .orderBy(sql`${articles.publishedAt} desc nulls last`, desc(articles.createdAt))
+    .limit(limit);
+}
+
+export async function saveSummary(id: string, summary: { titleKo: string; summaryKo: string }) {
+  await db
+    .update(articles)
+    .set({ ...summary, summarizedAt: new Date() })
+    .where(eq(articles.id, id));
+}
+
+// 이 사용자 기준으로 아직 분류한 적 없는(user_articles 행이 없는) 요약 완료 기사
+// 카테고리 삭제로 categoryId가 null이 된 행은 여기서 다시 고르지 않는다 (재분류 버튼에서 처리).
+export function getUnclassifiedArticles(userId: string, limit: number) {
+  return db
+    .select({ id: articles.id, titleKo: articles.titleKo, summaryKo: articles.summaryKo })
+    .from(articles)
+    .leftJoin(
+      userArticles,
+      and(eq(userArticles.articleId, articles.id), eq(userArticles.userId, userId)),
+    )
+    .where(and(isNull(userArticles.articleId), isNotNull(articles.summarizedAt)))
+    .orderBy(sql`${articles.publishedAt} desc nulls last`, desc(articles.createdAt))
+    .limit(limit);
+}
+
+// 이 사용자의 카테고리(분류 기준 설명 포함)
+export function getClassifyCategories(userId: string) {
+  return db
+    .select({ id: categories.id, name: categories.name, description: categories.description })
+    .from(categories)
+    .where(eq(categories.userId, userId))
+    .orderBy(asc(categories.createdAt), asc(categories.name));
+}
+
+// 분류 결과를 이 사용자의 user_articles 에 저장한다 (Notion 저장 상태는 건드리지 않는다).
+// categoryId 는 getClassifyCategories(userId) 로 받은 같은 사용자의 카테고리 id 여야 한다.
+export async function upsertUserCategories(
+  userId: string,
+  rows: { articleId: string; categoryId: string | null }[],
+) {
+  if (rows.length === 0) return;
+  await db
+    .insert(userArticles)
+    .values(rows.map((r) => ({ userId, ...r })))
+    .onConflictDoUpdate({
+      target: [userArticles.userId, userArticles.articleId],
+      set: { categoryId: sql`excluded.category_id`, updatedAt: new Date() },
+    });
 }
 
 export type DashboardArticle = Awaited<ReturnType<typeof getArticles>>[number];

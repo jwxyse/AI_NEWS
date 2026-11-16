@@ -46,7 +46,7 @@ export function FetchNewsButton({
   return (
     <form action={action} className={className}>
       <button type="submit" disabled={pending} className={`${primaryButton} w-full`}>
-        {pending ? "가져오는 중…" : label}
+        {pending ? "가져와서 요약하는 중…" : label}
       </button>
     </form>
   );
@@ -65,11 +65,7 @@ export function FetchNewsFeedback() {
     return () => clearTimeout(timer);
   }, [state]);
 
-  const toast = showToast
-    ? state.newCount
-      ? `새 기사 ${state.newCount}건을 가져왔어요`
-      : "새로 올라온 기사가 없어요"
-    : null;
+  const toast = showToast ? toastMessage(state) : null;
 
   const failedNames = (state.failedSources ?? []).map((s) => SOURCE_LABELS[s] ?? s).join(", ");
 
@@ -91,6 +87,16 @@ export function FetchNewsFeedback() {
         </p>
       )}
 
+      {!pending && state.ok && (state.summaryFailedCount || state.classifyFailed) ? (
+        <p role="status" className="rounded-lg bg-warning-soft px-4 py-3 text-sm text-warning break-keep">
+          {state.summaryFailedCount
+            ? `기사 ${state.summaryFailedCount}건은 요약하지 못했어요. `
+            : ""}
+          {state.classifyFailed ? "일부 기사는 분류하지 못했어요. " : ""}
+          다음에 뉴스를 가져올 때 다시 시도해요.
+        </p>
+      ) : null}
+
       <div aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 z-50 sm:right-6 sm:bottom-6">
         {toast && (
           <p className="rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-fg shadow-md">
@@ -100,4 +106,10 @@ export function FetchNewsFeedback() {
       </div>
     </>
   );
+}
+
+function toastMessage(state: FetchNewsState) {
+  if (state.newCount) return `새 기사 ${state.newCount}건을 가져왔어요`;
+  if (state.summarizedCount || state.classifiedCount) return "기사 요약·분류를 마쳤어요";
+  return "새로 올라온 기사가 없어요";
 }

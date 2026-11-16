@@ -50,8 +50,13 @@ export const articles = pgTable(
     originalTitle: text("original_title").notNull(),
     // 원문 기사 작성자 (RSS에 없을 수 있다)
     author: text("author"),
+    // RSS에 들어 있는 본문 발췌. 원문 페이지를 못 받아올 때 요약 입력으로 쓴다.
+    originalExcerpt: text("original_excerpt"),
+    // 번역·요약 전에는 원문 제목·발췌가 임시로 들어 있다 (summarizedAt 이 null).
     titleKo: text("title_ko").notNull(),
     summaryKo: text("summary_ko").notNull(),
+    // Claude 번역·요약을 마친 시각. null이면 아직 요약 전이라 다음 "뉴스 가져오기" 때 다시 시도한다.
+    summarizedAt: timestamp("summarized_at", { withTimezone: true }),
     // RSS에 발행일이 없을 수 있다.
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: createdAt(),

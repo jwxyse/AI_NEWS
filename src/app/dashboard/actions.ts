@@ -5,25 +5,32 @@ import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import { db } from "@/db";
-import { insertArticles } from "@/db/queries";
 import { categories, type ArticleSource } from "@/db/schema";
-import { collectRecentArticles } from "@/lib/rss";
+import { runNewsPipeline } from "@/lib/news-pipeline";
 
 export type FetchNewsState = {
   ok: boolean;
   newCount?: number;
+  summarizedCount?: number;
+  summaryFailedCount?: number;
+  classifiedCount?: number;
+  classifyFailed?: boolean;
   failedSources?: ArticleSource[];
   error?: string;
 };
 
-// "뉴스 가져오기" (FR-2): 최근 24시간 RSS 기사를 모아 공통 기사로 저장한다.
+// "뉴스 가져오기" (FR-2, FR-3): 최근 24시간 RSS 기사를 공통 기사로 저장하고,
+// 요약 전 기사를 Claude로 번역·요약한 뒤, 이 사용자 기준으로 아직 분류 안 된 기사를 분류한다.
 // useActionState 가 넘기는 (이전 상태, FormData)는 쓰지 않는다.
 export async function fetchNews(): Promise<FetchNewsState> {
   const { userId } = await auth();
   if (!userId) return { ok: false, error: "로그인이 필요해요." };
 
   try {
-    const { items, failedSources, allFailed } = await collectRecentArticles();
+    const result = await runNewsPipeline(userId);
+    const { allFailed, failedSources, ...counts } = result;
+
+    if (counts.newCount + counts.summarizedCount + counts.classifiedCount > 0) refresh();
 
     if (allFailed) {
       return {
@@ -32,13 +39,10 @@ export async function fetchNews(): Promise<FetchNewsState> {
         error: "뉴스를 가져오지 못했어요. 잠시 후 다시 시도해 주세요.",
       };
     }
-
-    const inserted = await insertArticles(items);
-    if (inserted.length > 0) refresh();
-    return { ok: true, newCount: inserted.length, failedSources };
+    return { ok: true, failedSources, ...counts };
   } catch (err) {
-    console.error("[fetchNews] 저장 실패", err);
-    return { ok: false, error: "뉴스를 저장하지 못했어요. 잠시 후 다시 시도해 주세요." };
+    console.error("[fetchNews] 실패", err);
+    return { ok: false, error: "뉴스를 처리하지 못했어요. 잠시 후 다시 시도해 주세요." };
   }
 }
 

@@ -15,6 +15,13 @@
       "when": 1794826861149,
       "tag": "0001_premium_jimmy_woo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794842168227,
+      "tag": "0002_busy_switch",
+      "breakpoints": true
     }
   ]
 }
