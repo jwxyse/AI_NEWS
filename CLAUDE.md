@@ -26,6 +26,14 @@ npx tsc --noEmit # 타입 검사 — .next/ 가 없으면 LayoutProps 미정의 
 - **Tailwind CSS v4** — `tailwind.config` 파일 없이 `src/app/globals.css`에서 설정하며, Turbopack 로더 `@tailwindcss/turbopack`으로 처리됩니다.
 - 설치된 PRD 스택 패키지: `@clerk/nextjs`(인증), `drizzle-orm` + `@neondatabase/serverless` + `drizzle-kit`(Neon Postgres), `rss-parser`, `@anthropic-ai/sdk`. Drizzle 설정·스키마와 `.env.local`은 아직 없습니다.
 
+## 인증 (Clerk Core 3, `@clerk/nextjs` v7)
+
+- `<SignedIn>`/`<SignedOut>`는 v7에서 제거됨 → `<Show when="signed-in">` 사용. `auth()`는 `@clerk/nextjs/server`에서 import.
+- `src/proxy.ts`(Next 16에서 `middleware` → `proxy`로 이름 변경): `/`만 공개. 로그인 안 한 요청은 API면 401 JSON, 페이지면 `/`로 리다이렉트.
+- `/`는 로그인 안 한 사용자에게 `SignInGate`를 렌더링해 로그인 **모달**을 자동으로 연다(별도 `/sign-in` 페이지 없음, `.env.local`의 `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/`).
+- `cacheComponents`가 켜져 있어 `auth()`/`<Show>`를 쓰는 서버 컴포넌트는 `<Suspense>`로 감싸야 빌드가 통과한다.
+- UI 한국어화: `ClerkProvider localization={koKR}` (`@clerk/localizations`).
+
 ## 계획된 아키텍처 (PRD 기준)
 
 - **멀티 유저 격리**: 모든 페이지와 API는 Clerk 로그인 필수이며, `categories`·`articles`·`notion_connections`의 모든 쿼리는 `userId`로 범위를 제한해야 합니다. 첫 로그인 시 기본 카테고리(LLM·모델 / 투자·비즈니스 / 정책·규제 / 연구 / 제품·서비스 / 기타)를 생성합니다.
