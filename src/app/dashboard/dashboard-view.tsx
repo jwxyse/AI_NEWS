@@ -8,6 +8,10 @@ import type { DashboardArticle, DashboardCategory } from "@/db/queries";
 import { CategoryBar, UNCATEGORIZED, categoryHref } from "./category-bar";
 import { FetchNewsButton } from "./fetch-news";
 import { NewsCard } from "./news-card";
+import { Pagination } from "./pagination";
+
+// 데스크톱 3열 기준 3줄
+const PAGE_SIZE = 9;
 
 // 카테고리 바 + 카드 목록. 기사는 서버에서 한 번에 받아 오고, 필터는 브라우저에서 바로 처리한다.
 export function DashboardView({
@@ -49,6 +53,12 @@ export function DashboardView({
         ? articles.filter((a) => categoryOf(a) === null)
         : articles.filter((a) => categoryOf(a) === selected);
 
+  // 페이지 번호가 잘못됐거나 범위를 넘으면 가까운 페이지로 맞춘다.
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const requested = Number.parseInt(searchParams.get("page") ?? "1", 10);
+  const page = Number.isNaN(requested) ? 1 : Math.min(Math.max(requested, 1), totalPages);
+  const pageArticles = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <>
       <CategoryBar
@@ -77,20 +87,27 @@ export function DashboardView({
           </a>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-          {visible.map((article) => {
-            const id = categoryOf(article);
-            return (
-              <li key={article.id}>
-                <NewsCard
-                  article={article}
-                  categoryName={id ? (categoryNames.get(id) ?? null) : null}
-                  now={now}
-                />
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+            {pageArticles.map((article) => {
+              const id = categoryOf(article);
+              return (
+                <li key={article.id}>
+                  <NewsCard
+                    article={article}
+                    categoryName={id ? (categoryNames.get(id) ?? null) : null}
+                    now={now}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            hrefFor={(p) => categoryHref(selected, p)}
+          />
+        </>
       )}
     </>
   );

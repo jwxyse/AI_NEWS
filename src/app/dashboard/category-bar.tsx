@@ -9,8 +9,13 @@ import { AddCategoryButton } from "./add-category-button";
 
 export const UNCATEGORIZED = "uncategorized";
 
-export function categoryHref(key: string | null) {
-  return key ? `/dashboard?category=${encodeURIComponent(key)}` : "/dashboard";
+// 카테고리를 바꾸면 페이지는 1로 돌아간다 (page 파라미터를 빼고 만든다).
+export function categoryHref(key: string | null, page = 1) {
+  const params = new URLSearchParams();
+  if (key) params.set("category", key);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/dashboard?${query}` : "/dashboard";
 }
 
 type Tab = { key: string | null; label: string; count: number };
