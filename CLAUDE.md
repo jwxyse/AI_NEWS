@@ -48,8 +48,9 @@ npm run db:studio   # Drizzle Studio로 DB 확인
 
 ## 계획된 아키텍처 (PRD 기준)
 
-- **멀티 유저 격리**: 모든 페이지와 API는 Clerk 로그인 필수이며, `categories`·`articles`·`notion_connections`의 모든 쿼리는 `userId`로 범위를 제한해야 합니다. 첫 로그인 시 기본 카테고리(LLM·모델 / 투자·비즈니스 / 정책·규제 / 연구 / 제품·서비스 / 기타)를 생성합니다.
-- **수집 파이프라인**: "뉴스 가져오기" 요청 시에만 실행(크론 없음) → TechCrunch AI, The Verge AI RSS 수집 → `originalUrl` 기준 중복 제거 → **새 기사만** Claude(`claude-opus-5-5`)로 보내 한국어 제목·3~4문장 요약·카테고리 1개를 생성. 피드 하나가 실패해도 나머지 결과는 반환합니다.
-- **재분류**: 사용자가 버튼을 눌렀을 때만 실행하며, 카테고리만 바꾸고 제목·요약은 유지합니다. 카테고리 삭제 시 해당 기사는 "미분류"(categoryId null)로 바뀝니다.
-- **Notion**: 사용자별 OAuth 연결, 토큰은 암호화해 저장하고 자동 갱신합니다. 저장은 Claude API의 MCP 커넥터로 노션 MCP 서버를 호출합니다. 첫 저장 때 "AI News" 데이터베이스를 만들고 그 ID를 `notion_connections`에 보관하며, 저장 후 `articles.notionPageUrl`로 중복 저장을 막습니다.
+- **공통 기사 + 사용자별 상태**: `articles`는 모든 사용자가 함께 보는 공통 데이터(`userId` 없음, `originalUrl` 전체 유일)입니다. 기사별 분류(`categoryId`)와 Notion 저장(`notionPageUrl`)은 `user_articles`(PK: userId+articleId)에 사용자별로 둡니다. 행이 없거나 `categoryId`가 null이면 그 사용자에게 "미분류"입니다. 목록 조회는 `articles` LEFT JOIN `user_articles`(해당 userId) 형태입니다(`src/db/queries.ts`).
+- **멀티 유저 격리**: 모든 페이지와 API는 Clerk 로그인 필수이며, `categories`·`user_articles`·`notion_connections`의 모든 쿼리는 `userId`로 범위를 제한해야 합니다. `user_articles.categoryId`에는 같은 사용자의 카테고리만 넣어야 합니다. 첫 로그인 시 기본 카테고리(LLM·모델 / 투자·비즈니스 / 정책·규제 / 연구 / 제품·서비스 / 기타)를 생성합니다.
+- **수집 파이프라인**: "뉴스 가져오기" 요청 시에만 실행(크론 없음) → TechCrunch AI, The Verge AI RSS 수집 → 전체 기사 기준 `originalUrl` 중복 제거 → **새 기사만** Claude(`claude-opus-5-5`)로 보내 한국어 제목·3~4문장 요약을 생성(공통, 기사당 1회) → 요청한 사용자 기준으로 아직 분류되지 않은 기사(새 기사 + 다른 사용자가 가져온 기사)에 카테고리 1개를 매겨 `user_articles`에 저장. 피드 하나가 실패해도 나머지 결과는 반환합니다.
+- **재분류**: 사용자가 버튼을 눌렀을 때만 실행하며, 그 사용자의 `user_articles.categoryId`만 바꾸고 제목·요약은 유지합니다. 카테고리 삭제 시 해당 기사는 그 사용자에게만 "미분류"(categoryId null)로 바뀝니다.
+- **Notion**: 사용자별 OAuth 연결, 토큰은 암호화해 저장하고 자동 갱신합니다. 저장은 Claude API의 MCP 커넥터로 노션 MCP 서버를 호출합니다. 첫 저장 때 "AI News" 데이터베이스를 만들고 그 ID를 `notion_connections`에 보관하며, 저장 후 `user_articles.notionPageUrl`로 중복 저장을 막습니다.
 - UI 문구는 모두 한국어이고, 반응형 카드 그리드를 사용합니다.
