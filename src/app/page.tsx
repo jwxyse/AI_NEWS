@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { SignInGate } from "@/components/sign-in-gate";
 
@@ -13,14 +14,8 @@ export default function Home() {
 async function HomeContent() {
   const { userId } = await auth();
 
-  if (!userId) {
-    return <SignInGate />;
-  }
+  // 로그인한 사용자는 메인 화면인 대시보드로 보낸다.
+  if (userId) redirect("/dashboard");
 
-  // TODO: 뉴스 카드 화면 (FR-2 ~ FR-5)
-  return (
-    <main className="flex flex-1 items-center justify-center px-4 text-zinc-600 dark:text-zinc-400">
-      아직 뉴스가 없어요. &apos;뉴스 가져오기&apos;를 눌러보세요.
-    </main>
-  );
+  return <SignInGate />;
 }
