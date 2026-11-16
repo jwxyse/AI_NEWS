@@ -2,10 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { focusRing, primaryButton } from "@/components/ui/button-styles";
+import { focusRing } from "@/components/ui/button-styles";
 import type { DashboardArticle, DashboardCategory } from "@/db/queries";
 
 import { CategoryBar, UNCATEGORIZED, categoryHref } from "./category-bar";
+import { FetchNewsButton } from "./fetch-news";
 import { NewsCard } from "./news-card";
 
 // 카테고리 바 + 카드 목록. 기사는 서버에서 한 번에 받아 오고, 필터는 브라우저에서 바로 처리한다.
@@ -118,19 +119,12 @@ function NoArticles() {
       <div className="flex max-w-sm flex-col gap-1.5">
         <h2 className="text-lg font-semibold text-fg">아직 수집된 뉴스가 없어요</h2>
         <p className="text-sm leading-relaxed text-fg-muted break-keep">
-          &apos;뉴스 가져오기&apos;를 누르면 TechCrunch와 The Verge의 최신 AI 뉴스를
-          한국어로 요약해 보여드려요.
+          {/* TODO: Claude 요약(FR-3) 구현 후 "한국어로 요약해" 문구로 되돌리기 */}
+          &apos;뉴스 가져오기&apos;를 누르면 TechCrunch와 The Verge에 최근 24시간 동안 올라온
+          AI 뉴스를 가져와요.
         </p>
       </div>
-      {/* TODO: 뉴스 가져오기(FR-2) 구현 후 활성화하고 안내 문구 제거 */}
-      <div className="flex flex-col items-center gap-2">
-        <button type="button" disabled aria-describedby="fetch-soon" className={primaryButton}>
-          뉴스 가져오기
-        </button>
-        <p id="fetch-soon" className="text-xs text-fg-subtle">
-          곧 사용할 수 있어요
-        </p>
-      </div>
+      <FetchNewsButton />
     </div>
   );
 }

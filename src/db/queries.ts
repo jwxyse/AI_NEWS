@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { articles, categories, userArticles } from "@/db/schema";
+import { articles, categories, userArticles, type NewArticle } from "@/db/schema";
 
 // PRD FR-1: 첫 로그인 때 만들어 주는 기본 카테고리
 const DEFAULT_CATEGORY_NAMES = [
@@ -60,6 +60,17 @@ export function getArticles(userId: string) {
       sql`${articles.publishedAt} desc nulls last`,
       desc(articles.createdAt),
     );
+}
+
+// 공통 기사로 저장한다. 이미 있는 원문 URL(articles_original_url_idx)은 건너뛴다.
+// 동시에 여러 사용자가 가져와도 유니크 인덱스가 중복을 막는다. 새로 들어간 기사만 돌려준다.
+export async function insertArticles(items: NewArticle[]) {
+  if (items.length === 0) return [];
+  return db
+    .insert(articles)
+    .values(items)
+    .onConflictDoNothing({ target: articles.originalUrl })
+    .returning({ id: articles.id });
 }
 
 export type DashboardArticle = Awaited<ReturnType<typeof getArticles>>[number];

@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@clerk/nextjs/server";
 
-import { primaryButton, secondaryButton } from "@/components/ui/button-styles";
+import { secondaryButton } from "@/components/ui/button-styles";
 import { getArticles, getCategoriesWithDefaults } from "@/db/queries";
 
 import { DashboardView } from "./dashboard-view";
+import { FetchNewsButton, FetchNewsFeedback, FetchNewsProvider } from "./fetch-news";
 
 export const metadata: Metadata = {
   title: "대시보드 | AI 뉴스 수집기",
@@ -15,13 +16,16 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <div className="flex flex-col gap-6">
-        <Toolbar />
-        {/* 로그인 사용자를 읽으므로 요청 시점에 렌더링 (cacheComponents) */}
-        <Suspense fallback={<DashboardSkeleton />}>
-          <DashboardContent />
-        </Suspense>
-      </div>
+      <FetchNewsProvider>
+        <div className="flex flex-col gap-6">
+          <Toolbar />
+          <FetchNewsFeedback />
+          {/* 로그인 사용자를 읽으므로 요청 시점에 렌더링 (cacheComponents) */}
+          <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardContent />
+          </Suspense>
+        </div>
+      </FetchNewsProvider>
     </main>
   );
 }
@@ -31,7 +35,7 @@ function Toolbar() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 className="text-2xl font-bold tracking-tight text-fg">오늘의 AI 뉴스</h1>
       <div className="flex gap-2">
-        {/* TODO: 재분류(FR-7), 뉴스 가져오기(FR-2) 구현 후 활성화 */}
+        {/* TODO: 재분류(FR-7) 구현 후 활성화 */}
         <button
           type="button"
           disabled
@@ -40,14 +44,7 @@ function Toolbar() {
         >
           재분류
         </button>
-        <button
-          type="button"
-          disabled
-          title="준비 중이에요"
-          className={`${primaryButton} flex-1 sm:flex-none`}
-        >
-          뉴스 가져오기
-        </button>
+        <FetchNewsButton className="flex-1 sm:flex-none" />
       </div>
     </div>
   );

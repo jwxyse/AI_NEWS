@@ -5,7 +5,42 @@ import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import { db } from "@/db";
-import { categories } from "@/db/schema";
+import { insertArticles } from "@/db/queries";
+import { categories, type ArticleSource } from "@/db/schema";
+import { collectRecentArticles } from "@/lib/rss";
+
+export type FetchNewsState = {
+  ok: boolean;
+  newCount?: number;
+  failedSources?: ArticleSource[];
+  error?: string;
+};
+
+// "뉴스 가져오기" (FR-2): 최근 24시간 RSS 기사를 모아 공통 기사로 저장한다.
+// useActionState 가 넘기는 (이전 상태, FormData)는 쓰지 않는다.
+export async function fetchNews(): Promise<FetchNewsState> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, error: "로그인이 필요해요." };
+
+  try {
+    const { items, failedSources, allFailed } = await collectRecentArticles();
+
+    if (allFailed) {
+      return {
+        ok: false,
+        failedSources,
+        error: "뉴스를 가져오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      };
+    }
+
+    const inserted = await insertArticles(items);
+    if (inserted.length > 0) refresh();
+    return { ok: true, newCount: inserted.length, failedSources };
+  } catch (err) {
+    console.error("[fetchNews] 저장 실패", err);
+    return { ok: false, error: "뉴스를 저장하지 못했어요. 잠시 후 다시 시도해 주세요." };
+  }
+}
 
 export type AddCategoryState = { ok: boolean; error?: string };
 
