@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI 뉴스 요약",
+  title: "AI 뉴스 수집기",
   description: "해외 AI 뉴스를 한국어로 요약해 카테고리별 카드로 보여주는 앱",
 };
 
@@ -28,9 +28,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         lang="ko"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col">
+        <body className="min-h-full flex flex-col bg-background font-sans text-fg">
           {/* 로그인 상태는 요청마다 달라지므로 Suspense 안에서 렌더링 (cacheComponents) */}
-          <Suspense fallback={<div className="h-14 border-b border-zinc-200 dark:border-zinc-800" />}>
+          <Suspense fallback={<div className="h-14 border-b border-border bg-surface" />}>
             <AppHeader />
           </Suspense>
           {children}

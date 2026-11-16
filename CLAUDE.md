@@ -30,6 +30,14 @@ npm run db:studio   # Drizzle Studio로 DB 확인
 - 설치된 PRD 스택 패키지: `@clerk/nextjs`(인증), `drizzle-orm` + `@neondatabase/serverless` + `drizzle-kit`(Neon Postgres), `rss-parser`, `@anthropic-ai/sdk`.
 - **DB (Drizzle + Neon)**: 설정 `drizzle.config.ts`(`@next/env`로 `.env.local` 로드), 클라이언트 `src/db/index.ts`(`drizzle-orm/neon-http`, `server-only` — 서버 코드에서만 `import { db } from "@/db"`), 스키마 `src/db/schema.ts`. 스키마를 바꾸면 `db:generate`로 마이그레이션을 만들어 `drizzle/`을 함께 커밋한다(`push` 대신 generate+migrate).
 
+## UI 가이드
+
+화면·컴포넌트를 만들거나 스타일을 바꾸기 전에 반드시 `ui.md`를 읽고 따르세요. 핵심 규칙:
+
+- 앱 이름은 "AI 뉴스 수집기", 메인 화면은 뉴스 카드 대시보드(헤더 → 툴바 → 카테고리 바 + "카테고리 추가" 버튼 → 카드 그리드)입니다.
+- 색은 zinc 기반 **역할 토큰**(`bg-surface`, `text-fg-muted`, `bg-primary` 등, `globals.css`의 `@theme`에 정의)으로만 씁니다. `zinc-*` 같은 팔레트 클래스나 `dark:` 색 클래스를 컴포넌트에 직접 쓰지 않습니다. 상태 색(success·danger·warning)은 상태 표시에만 씁니다.
+- 한국어 본문에는 `break-keep`과 넉넉한 줄 간격을 적용하고, 로딩·빈 상태·오류 상태를 함께 만듭니다.
+
 ## 인증 (Clerk Core 3, `@clerk/nextjs` v7)
 
 - `<SignedIn>`/`<SignedOut>`는 v7에서 제거됨 → `<Show when="signed-in">` 사용. `auth()`는 `@clerk/nextjs/server`에서 import.

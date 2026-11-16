@@ -1,12 +1,20 @@
+import Link from "next/link";
 import { Show, UserButton } from "@clerk/nextjs";
 
+import { focusRing } from "@/components/ui/button-styles";
+
+// ui.md 4.1 헤더. Notion 연결 상태는 FR-8 구현 때 오른쪽에 추가한다.
 export function AppHeader() {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800">
-      <span className="font-semibold">AI 뉴스 요약</span>
-      <Show when="signed-in">
-        <UserButton />
-      </Show>
+    <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/dashboard" className={`rounded text-base font-semibold text-fg ${focusRing}`}>
+          AI 뉴스 수집기
+        </Link>
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
+      </div>
     </header>
   );
 }
