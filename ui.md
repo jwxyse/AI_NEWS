@@ -142,11 +142,12 @@
 |---|---|
 | 페이지 제목 | `text-2xl font-bold tracking-tight text-fg` |
 | 앱 이름 (헤더) | `text-base font-semibold text-fg` |
-| 카드 제목 | `text-lg font-semibold leading-snug break-keep text-fg` |
-| 카드 요약 | `text-[15px] leading-relaxed break-keep text-fg-muted` (예외적으로 허용하는 임의 값) |
+| 카드 제목 | `text-lg font-semibold leading-snug break-keep wrap-anywhere text-fg` |
+| 카드 요약 | `text-[15px] leading-relaxed break-keep wrap-anywhere text-fg-muted` (예외적으로 허용하는 임의 값) |
 | 버튼·탭 | `text-sm font-medium` |
 | 메타·배지 | `text-xs text-fg-subtle` |
 
+- `break-keep`과 함께 `wrap-anywhere`를 써서, 좁은 화면에서 긴 영어 단어나 URL이 카드 밖으로 넘치지 않게 합니다.
 - 글꼴은 `font-sans`(Geist + 시스템 한글 글꼴)를 씁니다.
 - 굵기는 `font-medium`, `font-semibold`, `font-bold` 세 가지만 씁니다.
 
@@ -185,7 +186,7 @@
 ```tsx
 <body className="min-h-full flex flex-col bg-background font-sans text-fg">
   <AppHeader />
-  <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+  <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
     <div className="flex flex-col gap-6">
       {/* 툴바 → 카테고리 바 → 카드 그리드 */}
     </div>
@@ -238,8 +239,12 @@
 - 순서: **"전체"** → 사용자 카테고리(만든 순서대로) → 기사가 있을 때만 **"미분류"** → 맨 끝에 **"+ 카테고리 추가"** 버튼.
 - 탭은 둥근 알약(pill) 모양입니다. 선택된 탭은 `bg-primary`로 채우고, 나머지는 `bg-surface`에 테두리만 둡니다.
 - 탭 옆에 기사 수를 작게 표시합니다 (예: `LLM·모델 12`).
-- 모바일에서는 줄바꿈하지 않고 가로로 스크롤합니다 (`overflow-x-auto`). 데스크톱(`sm` 이상)에서는 `flex-wrap`으로 줄바꿈합니다.
-- 선택 상태는 URL 쿼리(`?category=<id>`)로 관리해 새로고침해도 유지되게 합니다.
+- 모바일에서는 줄바꿈하지 않고 가로로 스크롤합니다 (`overflow-x-auto`, 스크롤바 숨김). 데스크톱(`sm` 이상)에서는 `flex-wrap`으로 줄바꿈합니다.
+  - 양 끝에 더 볼 탭이 있으면 배경색 그라데이션(`bg-linear-to-l from-background`)으로 알려 줍니다.
+  - 처음 열 때 선택된 탭이 화면 밖에 있으면 가로로 스크롤해 보이게 합니다.
+- 선택 상태는 URL 쿼리(`?category=<id>`)로 관리해 새로고침·뒤로 가기에도 유지되게 합니다.
+- **필터는 브라우저에서 바로 처리합니다.** 기사는 한 번에 받아 오고, 탭을 누르면 `window.history.pushState`로 주소만 바꿉니다 (서버 왕복이 없어 로딩 표시가 필요 없습니다). ⌘/Ctrl 클릭은 기본 동작(새 탭)에 맡깁니다.
+- 기사가 하나도 없으면 탭 옆 개수(0)는 숨깁니다.
 
 ```tsx
 <nav aria-label="카테고리" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -303,8 +308,10 @@
     <time dateTime="2026-11-16">11월 16일</time>
   </div>
 
-  <h2 className="text-lg font-semibold leading-snug break-keep text-fg">
-    한국어로 번역된 기사 제목
+  <h2 className="text-lg font-semibold leading-snug break-keep wrap-anywhere text-fg">
+    <a href="…" target="_blank" rel="noopener noreferrer" className="hover:underline underline-offset-4">
+      한국어로 번역된 기사 제목
+    </a>
   </h2>
 
   <p className="line-clamp-4 text-[15px] leading-relaxed break-keep text-fg-muted">
@@ -321,7 +328,9 @@
 ```
 
 - 같은 줄의 카드 높이를 맞추려고 `h-full`과 `mt-auto`(하단 영역)를 씁니다.
+- **제목도 원문 링크입니다.** 모바일에서 가장 누르기 쉬운 곳이기 때문입니다 (새 탭에서 열림).
 - 요약은 `line-clamp-4`로 자릅니다. 원문은 링크로 이어집니다.
+- 카드 하단의 링크·버튼은 모바일에서 높이 40px(`h-10`), `sm` 이상에서 32px(`sm:h-8`)입니다.
 - 날짜는 `11월 16일` 형식으로 쓰고, 올해가 아니면 연도를 붙입니다 (`2025년 3월 2일`). 발행일이 없으면 날짜를 생략합니다.
 - 카테고리가 없는(null) 기사는 배지에 "미분류"를 `border border-dashed border-border-strong bg-transparent text-fg-subtle`로 표시합니다.
 - **Notion 저장 상태**
@@ -335,7 +344,7 @@
 |---|---|
 | Primary | `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg hover:bg-primary-hover disabled:opacity-50` |
 | Secondary | `inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium text-fg hover:bg-surface-muted disabled:opacity-50` |
-| Secondary (작게, 카드 안) | Secondary에서 `h-8 px-3`로 바꿉니다 |
+| Secondary (작게, 카드 안) | Secondary에서 `h-10 px-3 sm:h-8`로 바꿉니다 (모바일 터치 영역 확보) |
 | Danger (삭제) | Secondary에서 글자를 `text-danger`로, hover를 `hover:bg-danger-soft`로 바꿉니다 |
 
 - 모든 버튼과 링크에 포커스 링을 넣습니다: `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`.
@@ -348,20 +357,26 @@
 
 | 상태 | 표시 방법 |
 |---|---|
-| 로딩 (카드 목록) | 카드 모양 스켈레톤 6개: `h-56 animate-pulse rounded-xl bg-surface-muted` |
-| 빈 상태 (기사 없음) | 그리드 자리에 가운데 정렬로 "아직 뉴스가 없어요. '뉴스 가져오기'를 눌러보세요." + Primary 버튼 |
+| 로딩 (카드 목록) | 실제 화면 구조를 본뜬 스켈레톤: 너비가 다른 탭 틀 + 카드 틀 6개(배지 줄 → 제목 2줄 → 요약 4줄 → 하단 버튼, `animate-pulse bg-surface-muted`). `role="status"`와 `sr-only` "뉴스를 불러오는 중이에요"를 넣습니다 |
+| 빈 상태 (기사 없음) | 그리드 자리에 아이콘 + 제목 "아직 수집된 뉴스가 없어요" + 설명 + Primary "뉴스 가져오기" 버튼. 버튼을 쓸 수 없는 동안에는 비활성화하고 아래에 이유를 적습니다 (누를 수 없는 버튼을 누르라고 안내하지 않습니다) |
 | 빈 상태 (선택한 카테고리에 기사 없음) | "이 카테고리에는 아직 기사가 없어요." + "전체 보기" 링크 |
 | 부분 실패 (피드 하나 실패) | 툴바 아래 안내 띠 `rounded-lg bg-warning-soft px-4 py-3 text-sm text-warning`: "The Verge 뉴스를 가져오지 못했어요. 나머지 뉴스는 정상적으로 가져왔어요." |
-| 오류 | 안내 띠 `rounded-lg bg-danger-soft px-4 py-3 text-sm text-danger` + "다시 시도" 버튼 |
+| 오류 | 안내 띠 `rounded-lg bg-danger-soft px-4 py-3 text-sm text-danger` + "다시 시도" 버튼. 데이터 로딩 오류는 라우트의 `error.tsx`에서 처리하고 `retry()`로 다시 시도합니다 |
 | 완료 알림 | 화면 오른쪽 아래 토스트 3초 (`bg-primary text-primary-fg`): "새 기사 8건을 가져왔어요" |
 
 빈 상태 예시:
 
 ```tsx
-<div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border-strong px-6 py-16 text-center">
-  <p className="text-fg-muted">
-    아직 뉴스가 없어요. &apos;뉴스 가져오기&apos;를 눌러보세요.
-  </p>
+<div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border-strong px-6 py-14 text-center sm:py-16">
+  <div className="flex size-12 items-center justify-center rounded-full bg-surface-muted text-fg-subtle">
+    {/* 신문 아이콘 (aria-hidden) */}
+  </div>
+  <div className="flex max-w-sm flex-col gap-1.5">
+    <h2 className="text-lg font-semibold text-fg">아직 수집된 뉴스가 없어요</h2>
+    <p className="text-sm leading-relaxed text-fg-muted break-keep">
+      &apos;뉴스 가져오기&apos;를 누르면 TechCrunch와 The Verge의 최신 AI 뉴스를 한국어로 요약해 보여드려요.
+    </p>
+  </div>
   <button className={primaryButton}>뉴스 가져오기</button>
 </div>
 ```
@@ -376,7 +391,7 @@
 - 외부 링크는 `target="_blank" rel="noopener noreferrer"`로 엽니다.
 - 텍스트 대비는 WCAG AA(4.5:1) 이상을 지킵니다. 가장 흐린 글자 역할인 `fg-subtle`(라이트 zinc-500, 다크 zinc-400)도 이 기준을 넘도록 정했으므로, 이보다 흐린 zinc 단계를 글자에 쓰지 않습니다.
 - 색만으로 상태를 전달하지 않습니다. "저장됨"에는 ✓와 글자를, 선택된 탭에는 `aria-current`를 함께 씁니다.
-- 클릭 영역은 최소 높이 32px(`h-8`) 이상으로 합니다.
+- 클릭 영역은 모바일에서 최소 높이 40px(`h-10`), `sm` 이상에서 32px(`h-8`) 이상으로 합니다.
 
 ---
 

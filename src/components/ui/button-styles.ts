@@ -8,6 +8,7 @@ export const primaryButton = `${base} h-10 bg-primary px-4 text-primary-fg hover
 
 export const secondaryButton = `${base} h-10 border border-border bg-surface px-4 text-fg hover:bg-surface-muted disabled:hover:bg-surface`;
 
-export const secondaryButtonSm = `${base} h-8 border border-border bg-surface px-3 text-fg hover:bg-surface-muted disabled:hover:bg-surface`;
+// 카드 안의 작은 버튼. 모바일에서는 손가락으로 누르기 쉽게 40px, sm 이상에서 32px.
+export const secondaryButtonSm = `${base} h-10 border border-border bg-surface px-3 text-fg hover:bg-surface-muted disabled:hover:bg-surface sm:h-8`;
 
 export { focusRing };

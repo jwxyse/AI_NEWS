@@ -60,11 +60,19 @@ export function NewsCard({
         )}
       </div>
 
-      <h2 className="text-lg font-semibold leading-snug break-keep text-fg">
-        {article.titleKo}
+      {/* 모바일에서 가장 누르기 쉬운 제목을 원문 링크로 쓴다. 긴 영어 단어는 wrap-anywhere 로 줄바꿈. */}
+      <h2 className="text-lg font-semibold leading-snug break-keep wrap-anywhere text-fg">
+        <a
+          href={article.originalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`rounded hover:underline underline-offset-4 ${focusRing}`}
+        >
+          {article.titleKo}
+        </a>
       </h2>
 
-      <p className="line-clamp-4 text-[15px] leading-relaxed break-keep text-fg-muted">
+      <p className="line-clamp-4 text-[15px] leading-relaxed break-keep wrap-anywhere text-fg-muted">
         {article.summaryKo}
       </p>
 
@@ -73,9 +81,9 @@ export function NewsCard({
           href={article.originalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className={`rounded text-sm font-medium text-fg underline-offset-4 hover:underline ${focusRing}`}
+          className={`-ml-2 inline-flex h-10 items-center rounded-lg px-2 text-sm font-medium text-fg underline-offset-4 hover:underline sm:h-8 ${focusRing}`}
         >
-          원문 보기 <span aria-hidden>↗</span>
+          원문 보기 <span aria-hidden>&nbsp;↗</span>
         </a>
 
         {article.notionPageUrl ? (
@@ -83,7 +91,7 @@ export function NewsCard({
             href={article.notionPageUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex h-8 items-center gap-1 rounded-full bg-success-soft px-3 text-xs font-medium text-success hover:underline ${focusRing}`}
+            className={`inline-flex h-10 items-center gap-1 rounded-full bg-success-soft px-3 text-xs font-medium text-success hover:underline sm:h-8 ${focusRing}`}
           >
             저장됨 <span aria-hidden>✓</span>
           </a>
