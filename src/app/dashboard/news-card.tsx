@@ -1,6 +1,8 @@
-import { focusRing, secondaryButtonSm } from "@/components/ui/button-styles";
+import { focusRing } from "@/components/ui/button-styles";
 import type { DashboardArticle } from "@/db/queries";
 import type { ArticleSource } from "@/db/schema";
+
+import { SaveNewsButton } from "./save-news-button";
 
 const SOURCE_LABELS: Record<ArticleSource, string> = {
   techcrunch: "TechCrunch",
@@ -86,21 +88,7 @@ export function NewsCard({
           원문 보기 <span aria-hidden>&nbsp;↗</span>
         </a>
 
-        {article.notionPageUrl ? (
-          <a
-            href={article.notionPageUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex h-10 items-center gap-1 rounded-full bg-success-soft px-3 text-xs font-medium text-success hover:underline sm:h-8 ${focusRing}`}
-          >
-            저장됨 <span aria-hidden>✓</span>
-          </a>
-        ) : (
-          // TODO: Notion 저장 (FR-9) 구현 후 활성화
-          <button type="button" disabled title="준비 중이에요" className={secondaryButtonSm}>
-            Notion 저장
-          </button>
-        )}
+        <SaveNewsButton articleId={article.id} notionPageUrl={article.notionPageUrl} />
       </div>
     </article>
   );

@@ -5,8 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import { db } from "@/db";
+import { getArticleForNotion, setNotionPageUrl } from "@/db/queries";
 import { categories, type ArticleSource } from "@/db/schema";
 import { runNewsPipeline } from "@/lib/news-pipeline";
+import { createNotionPage, NotionError } from "@/lib/notion";
 
 export type FetchNewsState = {
   ok: boolean;
@@ -91,4 +93,44 @@ export async function addCategory(
 
   refresh();
   return { ok: true };
+}
+
+export type SaveToNotionState = {
+  ok: boolean;
+  notionPageUrl?: string;
+  alreadySaved?: boolean;
+  error?: string;
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// "뉴스 저장" (FR-9): 기사를 Notion 데이터베이스에 페이지로 저장하고, 이 사용자의 저장 상태를 기록한다.
+export async function saveToNotion(articleId: string): Promise<SaveToNotionState> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, error: "로그인이 필요해요." };
+  if (typeof articleId !== "string" || !UUID_RE.test(articleId)) {
+    return { ok: false, error: "기사를 찾지 못했어요." };
+  }
+
+  try {
+    const article = await getArticleForNotion(userId, articleId);
+    if (!article) return { ok: false, error: "기사를 찾지 못했어요." };
+    if (article.notionPageUrl) {
+      return { ok: true, alreadySaved: true, notionPageUrl: article.notionPageUrl };
+    }
+
+    const notionPageUrl = await createNotionPage(article);
+    await setNotionPageUrl(userId, articleId, notionPageUrl);
+    refresh();
+    return { ok: true, notionPageUrl };
+  } catch (err) {
+    console.error("[saveToNotion] 실패", err);
+    if (err instanceof NotionError && (err.status === 401 || err.status === 403 || err.status === 404)) {
+      return {
+        ok: false,
+        error: "Notion 데이터베이스에 접근할 수 없어요. 연결 설정을 확인해 주세요.",
+      };
+    }
+    return { ok: false, error: "Notion에 저장하지 못했어요. 다시 시도해 주세요." };
+  }
 }

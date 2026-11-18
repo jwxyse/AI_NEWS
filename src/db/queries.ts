@@ -135,6 +135,44 @@ export async function upsertUserCategories(
     });
 }
 
+// Notion에 저장할 기사 정보와 이 사용자의 카테고리 이름·저장 상태
+export async function getArticleForNotion(userId: string, articleId: string) {
+  const [row] = await db
+    .select({
+      titleKo: articles.titleKo,
+      summaryKo: articles.summaryKo,
+      source: articles.source,
+      publishedAt: articles.publishedAt,
+      originalUrl: articles.originalUrl,
+      categoryName: categories.name,
+      notionPageUrl: userArticles.notionPageUrl,
+    })
+    .from(articles)
+    .leftJoin(
+      userArticles,
+      and(eq(userArticles.articleId, articles.id), eq(userArticles.userId, userId)),
+    )
+    // 카테고리도 같은 사용자 것만 붙인다.
+    .leftJoin(
+      categories,
+      and(eq(categories.id, userArticles.categoryId), eq(categories.userId, userId)),
+    )
+    .where(eq(articles.id, articleId))
+    .limit(1);
+  return row ?? null;
+}
+
+// 이 사용자의 Notion 저장 상태를 기록한다 (분류 결과는 건드리지 않는다).
+export async function setNotionPageUrl(userId: string, articleId: string, notionPageUrl: string) {
+  await db
+    .insert(userArticles)
+    .values({ userId, articleId, notionPageUrl })
+    .onConflictDoUpdate({
+      target: [userArticles.userId, userArticles.articleId],
+      set: { notionPageUrl, updatedAt: new Date() },
+    });
+}
+
 export type DashboardArticle = Awaited<ReturnType<typeof getArticles>>[number];
 export type DashboardCategory = Awaited<
   ReturnType<typeof getCategoriesWithDefaults>
