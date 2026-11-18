@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 상태
 
-해외 AI 뉴스를 RSS로 수집해 Claude로 한국어 요약·분류하고, 카드로 보여주며 Notion에 저장하는 웹앱입니다. 요구사항 전체는 `PRD.md`에 있습니다. 현재는 `create-next-app` 기본 골격과 의존성만 설치된 상태이며, 앱 코드는 아직 없습니다. (`PRD.md`가 언급하는 `PLAN.md`는 아직 존재하지 않습니다.)
+해외 AI 뉴스를 RSS로 수집해 Claude로 한국어 요약·분류하고, 카드로 보여주며 Notion에 저장하는 웹앱입니다. 요구사항 전체는 `PRD.md`에 있습니다. 대시보드(`/dashboard`), 뉴스 가져오기·요약·분류, Notion 저장까지 구현되어 있습니다. (`PRD.md`가 언급하는 `PLAN.md`는 아직 존재하지 않습니다.)
 
 ## 명령어
 
@@ -49,8 +49,8 @@ npm run db:studio   # Drizzle Studio로 DB 확인
 ## 계획된 아키텍처 (PRD 기준)
 
 - **공통 기사 + 사용자별 상태**: `articles`는 모든 사용자가 함께 보는 공통 데이터(`userId` 없음, `originalUrl` 전체 유일)입니다. 기사별 분류(`categoryId`)와 Notion 저장(`notionPageUrl`)은 `user_articles`(PK: userId+articleId)에 사용자별로 둡니다. 행이 없거나 `categoryId`가 null이면 그 사용자에게 "미분류"입니다. 목록 조회는 `articles` LEFT JOIN `user_articles`(해당 userId) 형태입니다(`src/db/queries.ts`).
-- **멀티 유저 격리**: 모든 페이지와 API는 Clerk 로그인 필수이며, `categories`·`user_articles`·`notion_connections`의 모든 쿼리는 `userId`로 범위를 제한해야 합니다. `user_articles.categoryId`에는 같은 사용자의 카테고리만 넣어야 합니다. 첫 로그인 시 기본 카테고리(LLM·모델 / 투자·비즈니스 / 정책·규제 / 연구 / 제품·서비스 / 기타)를 생성합니다.
+- **멀티 유저 격리**: 모든 페이지와 API는 Clerk 로그인 필수이며, `categories`·`user_articles`(·나중에 쓸 `notion_connections`)의 모든 쿼리는 `userId`로 범위를 제한해야 합니다. `user_articles.categoryId`에는 같은 사용자의 카테고리만 넣어야 합니다. 첫 로그인 시 기본 카테고리(LLM·모델 / 투자·비즈니스 / 정책·규제 / 연구 / 제품·서비스 / 기타)를 생성합니다.
 - **수집 파이프라인**: "뉴스 가져오기" 요청 시에만 실행(크론 없음) → TechCrunch AI, The Verge AI RSS 수집 → 전체 기사 기준 `originalUrl` 중복 제거 → **새 기사만** Claude(`claude-opus-5-5`)로 보내 한국어 제목·3~4문장 요약을 생성(공통, 기사당 1회) → 요청한 사용자 기준으로 아직 분류되지 않은 기사(새 기사 + 다른 사용자가 가져온 기사)에 카테고리 1개를 매겨 `user_articles`에 저장. 피드 하나가 실패해도 나머지 결과는 반환합니다.
 - **재분류**: 사용자가 버튼을 눌렀을 때만 실행하며, 그 사용자의 `user_articles.categoryId`만 바꾸고 제목·요약은 유지합니다. 카테고리 삭제 시 해당 기사는 그 사용자에게만 "미분류"(categoryId null)로 바뀝니다.
-- **Notion**: 사용자별 OAuth 연결, 토큰은 암호화해 저장하고 자동 갱신합니다. 저장은 Claude API의 MCP 커넥터로 노션 MCP 서버를 호출합니다. 첫 저장 때 "AI News" 데이터베이스를 만들고 그 ID를 `notion_connections`에 보관하며, 저장 후 `user_articles.notionPageUrl`로 중복 저장을 막습니다.
+- **Notion 저장 (PRD v0.3)**: 카드의 "뉴스 저장" 버튼 → Server Action `saveToNotion`(`src/app/dashboard/actions.ts`) → `src/lib/notion.ts`가 Notion REST API(`Notion-Version: 2025-09-03`)로 페이지를 만든다. 앱 공용 Internal integration 토큰 `NOTION_API_KEY`와 데이터베이스 `NOTION_DATABASE_ID`("AI 뉴스 북마크")를 쓰며, 모든 사용자가 같은 데이터베이스에 저장한다. 이 API 버전에서는 페이지 부모가 data source이므로 데이터베이스에서 data source ID를 조회해 쓴다. 데이터베이스 속성 이름(제목·텍스트·카테고리·출처·발행일·원문링크)을 Notion에서 바꾸면 `notion.ts`도 함께 바꿔야 한다. 저장 결과는 `user_articles.notionPageUrl`에 사용자별로 기록해 중복 저장을 막는다. Claude/MCP 커넥터는 쓰지 않는다 — 노션 MCP 서버(`mcp.notion.com`)는 OAuth만 받아 integration 토큰을 쓸 수 없다. 사용자별 OAuth 연결(FR-8)과 `notion_connections` 테이블은 보류 상태다.
 - UI 문구는 모두 한국어이고, 반응형 카드 그리드를 사용합니다.

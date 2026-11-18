@@ -3,7 +3,7 @@ import { Show, UserButton } from "@clerk/nextjs";
 
 import { focusRing } from "@/components/ui/button-styles";
 
-// ui.md 4.1 헤더. Notion 연결 상태는 FR-8 구현 때 오른쪽에 추가한다.
+// ui.md 4.1 헤더. Notion 연결 상태는 사용자별 Notion 연결(PRD FR-8, 보류)을 만들 때 오른쪽에 추가한다.
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">

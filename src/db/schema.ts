@@ -100,7 +100,8 @@ export const userArticles = pgTable(
 );
 
 // ─────────────────────────────────────────────
-// Notion 연결 (사용자당 1개)
+// Notion 연결 (사용자당 1개) — 사용자별 OAuth 연결(PRD FR-8, 보류)용. 지금은 쓰지 않는다.
+// 현재 저장은 공용 integration(NOTION_API_KEY)으로 NOTION_DATABASE_ID 에 한다 (src/lib/notion.ts).
 // ─────────────────────────────────────────────
 export const notionConnections = pgTable("notion_connections", {
   userId: text("user_id").primaryKey(),

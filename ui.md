@@ -171,7 +171,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ AI 뉴스 수집기                 [Notion 연결됨 ●]  (사용자) │  ← 헤더 (h-14, sticky)
+│ AI 뉴스 수집기                                    (사용자) │  ← 헤더 (h-14, sticky)
 ├──────────────────────────────────────────────────────────┤
 │ 오늘의 AI 뉴스                    [재분류] [뉴스 가져오기] │  ← 툴바
 │                                                          │
@@ -201,8 +201,8 @@
 ### 4.1 헤더
 
 - 높이 `h-14`, 상단 고정 `sticky top-0 z-10`, 반투명 배경 `bg-surface/80 backdrop-blur`, 아래 테두리.
-- 왼쪽에는 앱 이름 **"AI 뉴스 수집기"**, 오른쪽에는 Notion 연결 상태와 Clerk `<UserButton />`을 둡니다.
-- Notion 상태 표시: 연결됐으면 성공 색 점과 워크스페이스 이름, 연결 안 됐으면 "Notion 연결" 보조 버튼을 보여줍니다.
+- 왼쪽에는 앱 이름 **"AI 뉴스 수집기"**, 오른쪽에는 Clerk `<UserButton />`을 둡니다.
+- (보류, PRD FR-8) 사용자별 Notion 연결을 만들면 `<UserButton />` 왼쪽에 연결 상태를 둡니다: 연결됐으면 성공 색 점과 워크스페이스 이름, 연결 안 됐으면 "Notion 연결" 보조 버튼.
 
 ```tsx
 <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">
@@ -295,7 +295,7 @@
 
 ### 4.5 뉴스 카드
 
-카드 구성(위→아래): **카테고리 배지 · 출처 · 발행일** → **한국어 제목** → **요약** → **하단 동작(원문 보기, Notion 저장)**
+카드 구성(위→아래): **카테고리 배지 · 출처 · 발행일** → **한국어 제목** → **요약** → **하단 동작(원문 보기, 뉴스 저장)**
 
 ```tsx
 <article className="flex h-full flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -322,7 +322,7 @@
     <a href="…" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-fg underline-offset-4 hover:underline">
       원문 보기 <span aria-hidden>↗</span>
     </a>
-    <button className={secondaryButtonSm}>Notion 저장</button>
+    <button className={secondaryButtonSm}>뉴스 저장</button>
   </div>
 </article>
 ```
@@ -333,10 +333,11 @@
 - 카드 하단의 링크·버튼은 모바일에서 높이 40px(`h-10`), `sm` 이상에서 32px(`sm:h-8`)입니다.
 - 날짜는 `11월 16일` 형식으로 쓰고, 올해가 아니면 연도를 붙입니다 (`2025년 3월 2일`). 발행일이 없으면 날짜를 생략합니다.
 - 카테고리가 없는(null) 기사는 배지에 "미분류"를 `border border-dashed border-border-strong bg-transparent text-fg-subtle`로 표시합니다.
-- **Notion 저장 상태**
-  - 기본: 작은 보조 버튼 "Notion 저장"
+- **뉴스 저장 상태** (`save-news-button.tsx`)
+  - 기본: 작은 보조 버튼 "뉴스 저장"
   - 저장 중: 버튼 비활성화 + "저장 중…"
-  - 저장됨: 버튼 대신 `저장됨 ✓` 배지(`bg-success-soft text-success`)와 Notion 페이지 링크
+  - 저장됨: 버튼 대신 `저장됨 ✓` 배지(`bg-success-soft text-success`). 배지 자체가 Notion 페이지 링크(새 탭)
+  - 실패: 버튼 왼쪽에 `text-xs text-danger` 오류 문구, 버튼 문구는 "다시 시도"
 
 ### 4.6 버튼
 
